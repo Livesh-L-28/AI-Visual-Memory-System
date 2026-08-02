@@ -1,0 +1,6 @@
+{
+  "name": "AI Visual Memory Navigation System",
+  "description": "Real-time AI visual memory tracking physical objects, spatial floor plan maps, and natural language memory querying.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
