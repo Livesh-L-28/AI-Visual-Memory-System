@@ -1,14 +1,27 @@
 # AI Visual Memory & Spatial Tracking System
 
-An AI-powered real-time computer vision system that detects, tracks, remembers, and spatially maps physical objects using multimodal AI. Unlike traditional object detection applications, this system builds a **persistent visual memory** of the environment, allowing users to locate previously seen objects, track movement history, and interact with the system using natural language.
+<p align="center">
+  <img src="https://img.shields.io/badge/AI-Visual%20Memory%20System-ff69b4?style=for-the-badge&logo=google" alt="banner" />
+  <img src="https://img.shields.io/badge/Real-Time-🚀-brightgreen?style=for-the-badge" alt="realtime" />
+  <img src="https://img.shields.io/badge/Multimodal-Gemini-blueviolet?style=for-the-badge&logo=google" alt="gemini" />
+  <img src="https://img.shields.io/badge/Status-Prototype-yellow?style=for-the-badge" alt="status" />
+</p>
 
-The application combines **computer vision, object re-identification, spatial mapping, vector memory, and AI-powered reasoning** into a single interactive platform suitable for smart workspaces, robotics, AR/VR environments, surveillance, and intelligent indoor navigation.
+<p align="center">
+  <em>Make your environment remember — colorful, interactive, and AI-driven ✨</em>
+</p>
 
 ---
 
-# Features
+# 🎨 Overview
 
-## Real-Time Computer Vision
+An AI-powered real-time computer vision system that detects, tracks, remembers, and spatially maps physical objects using multimodal AI. Unlike traditional object detection applications, this system blends computer vision, memory, and spatial intelligence into a single interactive platform for smart workspaces and robotics.
+
+---
+
+# 🎯 Features
+
+## 🔴 Real-Time Computer Vision
 
 - Live webcam streaming
 - Preset room camera scenes
@@ -18,28 +31,28 @@ The application combines **computer vision, object re-identification, spatial ma
 - Multi-object detection
 - Dynamic object classification
 
-Supported objects include:
+Supported objects include (examples):
 
-- Person
-- Laptop
-- Glasses
-- Chair
-- Bottle
-- Phone
-- Keyboard
-- Mouse
-- Monitor
-- Backpack
-- Fan
-- Cup
-- Appliances
-- Custom registered objects
+- 👤 Person
+- 💻 Laptop
+- 👓 Glasses
+- 🪑 Chair
+- 🍼 Bottle
+- 📱 Phone
+- ⌨️ Keyboard
+- 🖱️ Mouse
+- 🖥️ Monitor
+- 🎒 Backpack
+- 🌀 Fan
+- ☕ Cup
+- 🔌 Appliances
+- ⭐ Custom registered objects
 
 ---
 
-## Interactive Perception HUD
+## 🖼️ Interactive Perception HUD
 
-The perception interface provides multiple visualization layers:
+The perception interface provides multiple visualization layers (toggleable):
 
 - Bounding boxes
 - Object labels
@@ -50,36 +63,17 @@ The perception interface provides multiple visualization layers:
 - Distance indicators
 - Object tracking paths
 
-HUD layers can be enabled or disabled individually.
+---
+
+## 🆔 Object Tracking & Re-Identification
+
+Each detected object receives a permanent identity (e.g., `#OBJ-001`). Identity persistence is maintained across occlusions and reappearances using appearance similarity, spatial consistency, and vector matching.
 
 ---
 
-## Object Tracking & Re-Identification
+## 🗺️ Spatial Memory Bank
 
-Each detected object receives a permanent identity.
-
-Example:
-
-- #OBJ-001
-- #OBJ-002
-- #OBJ-003
-
-The system preserves object identities even when:
-
-- Objects leave the camera view
-- Temporary occlusions occur
-- Objects reappear later
-- Partial visibility occurs
-
-Identity persistence is maintained using appearance similarity, spatial consistency, and vector matching.
-
----
-
-## Spatial Memory Bank
-
-Every observation is stored in a persistent memory database.
-
-Each object stores:
+Every observation is stored in a persistent memory database. Each object stores:
 
 - Permanent Object ID
 - Object Class
@@ -90,206 +84,71 @@ Each object stores:
 - Observation History
 - Vector Embedding
 
-Users can:
+Users can: search objects, filter by status, view history, delete objects, or register custom objects manually.
 
-- Search objects
-- Filter by status
-- View object history
-- Delete objects
-- Register custom objects manually
-
-Object states include:
-
-- Visible
-- Lost
-- Occluded
-- Registered
+Object states: Visible, Lost, Occluded, Registered
 
 ---
 
-## 2D Spatial Floor Plan
+## 🏠 2D Spatial Floor Plan
 
-Detected objects are projected onto an interactive floor plan using homography calibration.
+Detected objects are projected onto an interactive floor plan using homography calibration. Shows room boundaries, camera FOV, object positions, zones, tracking paths, and active camera location.
 
-The floor plan displays:
-
-- Room boundaries
-- Camera field of view
-- Object positions
-- Spatial zones
-- Tracking paths
-- Active camera location
-
-Example zones:
-
-- Workstation
-- Executive Desk
-- Lounge
-- Storage
-- Meeting Area
+Example zones: Workstation, Executive Desk, Lounge, Storage, Meeting Area
 
 ---
 
-## Pixel-to-Meter Spatial Mapping
+## 📏 Pixel-to-Meter Spatial Mapping
 
-The application converts camera pixel coordinates into real-world coordinates using four-point homography transformation.
-
-Pipeline:
-
-Camera Image
-
-↓
-
-Pixel Coordinates
-
-↓
-
-Homography Mapping
-
-↓
-
-Real World Coordinates
-
-↓
-
-Floor Plan Visualization
-
-This allows accurate localization of detected objects inside the environment.
+Pixel coordinates → Homography → Real world coordinates → Floor plan visualization. Accurate localization inside the environment.
 
 ---
 
-## AI Memory Assistant
+## 🤖 AI Memory Assistant
 
-Users can query the system using natural language.
+Natural language queries such as:
 
-Example queries:
+- "Where are my glasses?" 👓
+- "Find my laptop." 💻
+- "Which objects disappeared?" ❓
 
-- Where are my glasses?
-- Find my laptop.
-- Show my backpack.
-- Which objects disappeared?
-- How many chairs are visible?
-- What was last seen near the desk?
-- Show objects in the lounge.
-
-The assistant combines:
-
-- Visual observations
-- Object history
-- Vector similarity search
-- Gemini multimodal reasoning
-
-to generate context-aware responses.
+Combines visual observations, object history, vector similarity search, and Gemini multimodal reasoning for context-aware answers.
 
 ---
 
-## Voice-Based Spatial Search
+## 🎙️ Voice-Based Spatial Search
 
-Supports voice interaction.
-
-Workflow:
-
-Speech
-
-↓
-
-Speech Recognition
-
-↓
-
-Natural Language Query
-
-↓
-
-Gemini AI
-
-↓
-
-Memory Search
-
-↓
-
-Spatial Response
+Speech → Speech Recognition → Natural Language Query → Gemini AI → Memory Search → Spatial Response
 
 ---
 
-## Manual Object Registration
+## 📝 Manual Object Registration
 
-Users can manually register important objects such as:
-
-- Wallet
-- Passport
-- Office ID
-- Car Keys
-- Headphones
-- Documents
-
-Each registration stores:
-
-- Object name
-- Category
-- Notes
-- Initial coordinates
-- Timestamp
+Register important objects (wallet, passport, keys, etc.) with metadata and initial coordinates.
 
 ---
 
-## Historical Observation Timeline
+## ⏳ Historical Observation Timeline
 
-Every tracked object maintains a complete observation history.
+Complete observation history per object, e.g.:
 
-Example:
-
-10:10 AM → Detected near Desk
-
-↓
-
-10:15 AM → Moved to Lounge
-
-↓
-
-10:20 AM → Temporarily Lost
-
-↓
-
-10:26 AM → Visible Again
+10:10 AM → Detected near Desk → 10:15 AM → Moved to Lounge → 10:20 AM → Temporarily Lost → 10:26 AM → Visible Again
 
 ---
 
-## Export Functionality
+## 📤 Export Functionality
 
-The complete spatial memory database can be exported as:
-
-- JSON
-- CSV
-
-Suitable for:
-
-- Analytics
-- Auditing
-- Robotics datasets
-- Research
-- Reporting
+Export spatial memory as JSON or CSV for analytics, research, or robotics datasets.
 
 ---
 
-## Live System Telemetry
+## 📊 Live System Telemetry
 
-The dashboard monitors:
-
-- Live FPS
-- Detection latency
-- Active objects
-- Total observations
-- Memory retention duration
-- Confidence score distribution
-- Vector memory size
-- Similarity threshold
-- Detection statistics
+Dashboard shows FPS, detection latency, active objects, memory stats, confidence distribution, and vector memory metrics.
 
 ---
 
-# System Architecture
+# 🏗️ System Architecture
 
 ```
 Camera Feed
@@ -326,55 +185,18 @@ Floor Plan      AI Memory Assistant
 
 ---
 
-# Technology Stack
+# 🧰 Technology Stack
 
-## Frontend
-
-- React 18
-- TypeScript
-- Vite
-- Tailwind CSS
-- HTML5 Canvas
-
-## Backend
-
-- Node.js
-- Express.js
-- REST API
-
-## Artificial Intelligence
-
-- Google Gemini Flash
-- Multimodal AI
-- Natural Language Processing
-- Vision-Language Reasoning
-
-## Computer Vision
-
-- Object Detection
-- Bounding Box Extraction
-- Object Tracking
-- Re-Identification
-- Spatial Coordinate Mapping
-
-## Spatial Intelligence
-
-- Homography Transformation
-- Pixel-to-Meter Conversion
-- Coordinate Calibration
-- Interactive Floor Plan Mapping
-
-## Data Management
-
-- Persistent Memory Store
-- Vector Embeddings
-- Cosine Similarity Search
-- JSON Storage
-- CSV Export
+- Frontend: React 18 · TypeScript · Vite · Tailwind CSS
+- Backend: Node.js · Express.js · REST API
+- AI: Google Gemini Flash · Multimodal AI · Vision-Language Reasoning
+- CV: Object Detection · Tracking · Re-Identification
+- Spatial: Homography · Pixel-to-Meter Mapping
+- Storage: Persistent Memory Store · Vector Embeddings · Cosine Similarity
 
 ---
 
-# Project Workflow
+# 🚦 Project Workflow
 
 ```
 Camera Stream
@@ -409,24 +231,18 @@ AI Spatial Response
 
 ---
 
-# Applications
+# ✨ Applications
 
 - Smart Office Object Tracking
 - AI Personal Memory Assistant
 - Indoor Navigation
 - Robotics Perception
 - Warehouse Asset Management
-- Digital Twin Systems
 - AR/VR Spatial Computing
-- Smart Home Automation
-- Security Monitoring
-- Healthcare Asset Tracking
-- Human-Robot Interaction
-- Industrial Monitoring
 
 ---
 
-# Future Enhancements
+# 🚀 Future Enhancements
 
 - Multi-camera tracking
 - 3D room reconstruction
@@ -434,32 +250,22 @@ AI Spatial Response
 - Cloud memory synchronization
 - Face recognition
 - Object trajectory prediction
-- Mobile application
+- Mobile app
 - IoT integration
-- AR smart glasses support
-- Distributed vector database
-- Collaborative spatial memory
-- Autonomous robot navigation
 
 ---
 
-# Highlights
+# 🎉 Highlights
 
-- Real-time AI-powered object detection
-- Persistent object identity through Re-Identification
-- Interactive spatial floor plan visualization
-- Pixel-to-meter coordinate mapping
-- AI-powered natural language object search
+- Real-time AI detection
+- Persistent identities via Re-Identification
+- Interactive floor plan
+- Pixel-to-meter mapping
 - Voice-enabled spatial assistant
-- Persistent visual memory database
-- Historical object tracking timeline
-- Live telemetry dashboard
-- JSON and CSV export support
-- Modular full-stack architecture
-- Production-ready user interface
+- Export (JSON / CSV)
 
 ---
 
-# License
+# 📝 License
 
 This project is intended for educational, research, and demonstration purposes. Feel free to extend and customize it for your own applications.
