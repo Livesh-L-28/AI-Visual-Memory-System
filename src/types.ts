@@ -19,6 +19,12 @@ export interface Detection {
   croppedThumbnail?: string;
 }
 
+export interface TrajectoryPoint {
+  x: number;
+  y: number;
+  timestamp: string;
+}
+
 export interface TrackedObject {
   id: number; // Permanent Object ID
   className: string;
@@ -35,6 +41,9 @@ export interface TrackedObject {
   latestBbox?: BoundingBox;
   description?: string;
   historyCount: number;
+  trajectory?: TrajectoryPoint[];
+  consecutiveMissedFrames?: number;
+  zone?: string;
 }
 
 export interface DetectionHistoryEntry {
@@ -56,13 +65,62 @@ export interface RoomCalibrationPoint {
   mapY: number; // map Y in meters
 }
 
+export interface RoomZone {
+  id: string;
+  name: string;
+  color: string;
+  x1: number; // in meters
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
 export interface Room {
   id: number;
   name: string;
   widthMeters: number;
   heightMeters: number;
   calibrationPoints: RoomCalibrationPoint[];
+  zones?: RoomZone[];
+  homographyMatrix?: number[];
 }
+
+export type WsServerMessage =
+  | {
+      type: 'telemetry_tick';
+      timestamp: string;
+      stats: SystemStats;
+      activeCount: number;
+      visibleObjects: Array<{
+        id: number;
+        className: string;
+        lastLocationX: number;
+        lastLocationY: number;
+        recentConfidence: number;
+        status: ObjectStatus;
+        zone?: string;
+      }>;
+    }
+  | {
+      type: 'object_status_changed';
+      objectId: number;
+      className: string;
+      status: ObjectStatus;
+      lastLocationX: number;
+      lastLocationY: number;
+      timestamp: string;
+      zone?: string;
+    }
+  | {
+      type: 'objects_updated';
+      objects: TrackedObject[];
+      stats: SystemStats;
+    }
+  | {
+      type: 'frame_processed_result';
+      summary: string;
+      detections: Detection[];
+    };
 
 export interface SystemStats {
   fps: number;

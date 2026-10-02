@@ -10,6 +10,7 @@ import {
   Maximize2
 } from 'lucide-react';
 import { TrackedObject, DetectionHistoryEntry } from '../types';
+import { getDefaultThumbnailForClass } from '../lib/thumbnail_utils';
 
 interface ObjectDetailDrawerProps {
   object: TrackedObject | null;
@@ -73,6 +74,9 @@ export const ObjectDetailDrawer: React.FC<ObjectDetailDrawerProps> = ({ object, 
             <img
               src={object.thumbnailPath}
               alt={object.className}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = getDefaultThumbnailForClass(object.className);
+              }}
               className="w-full h-full object-cover"
             />
           </div>
@@ -94,9 +98,9 @@ export const ObjectDetailDrawer: React.FC<ObjectDetailDrawerProps> = ({ object, 
               </span>
             </div>
             <div>
-              <span className="text-slate-500 text-[10px] block">Re-ID Match Score</span>
-              <span className="text-emerald-400 font-bold">
-                {Math.round(object.recentConfidence * 100)}%
+              <span className="text-slate-500 text-[10px] block">Spatial Zone</span>
+              <span className="text-purple-300 font-bold">
+                {object.zone || 'General Area'}
               </span>
             </div>
             <div>
@@ -109,6 +113,18 @@ export const ObjectDetailDrawer: React.FC<ObjectDetailDrawerProps> = ({ object, 
               <span className="text-slate-500 text-[10px] block">Last Observed</span>
               <span className="text-slate-300 text-[11px]">
                 {new Date(object.lastSeen).toLocaleTimeString()}
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-500 text-[10px] block">Re-ID Match Score</span>
+              <span className="text-emerald-400 font-bold">
+                {Math.round(object.recentConfidence * 100)}%
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-500 text-[10px] block">Recorded Trajectory</span>
+              <span className="text-cyan-300">
+                {(object.trajectory || []).length} waypoint(s)
               </span>
             </div>
           </div>

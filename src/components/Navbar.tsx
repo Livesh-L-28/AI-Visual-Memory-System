@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Eye,
   BrainCircuit,
@@ -8,7 +8,10 @@ import {
   RotateCcw,
   Camera,
   Activity,
-  Layers
+  KeyRound,
+  Check,
+  X,
+  AlertCircle
 } from 'lucide-react';
 import { SystemStats } from '../types';
 
@@ -29,28 +32,82 @@ export const Navbar: React.FC<NavbarProps> = ({
   isStreaming,
   toggleStream
 }) => {
+  const [hasApiKey, setHasApiKey] = useState<boolean>(false);
+  const [showKeyModal, setShowKeyModal] = useState<boolean>(false);
+  const [keyInput, setKeyInput] = useState<string>('');
+  const [isSavingKey, setIsSavingKey] = useState<boolean>(false);
+  const [keyMessage, setKeyMessage] = useState<string | null>(null);
+
+  const checkConfig = async () => {
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) {
+        const data = await res.json();
+        setHasApiKey(!!data.hasGeminiKey);
+      }
+    } catch (e) {
+      // Ignore
+    }
+  };
+
+  useEffect(() => {
+    checkConfig();
+  }, []);
+
+  const handleSaveKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!keyInput.trim()) return;
+
+    setIsSavingKey(true);
+    setKeyMessage(null);
+    try {
+      const res = await fetch('/api/config/api-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: keyInput.trim() })
+      });
+
+      if (res.ok) {
+        setHasApiKey(true);
+        setKeyMessage('Gemini API Key activated successfully!');
+        setKeyInput('');
+        setTimeout(() => {
+          setShowKeyModal(false);
+          setKeyMessage(null);
+        }, 1200);
+      } else {
+        const err = await res.json();
+        setKeyMessage(`Error: ${err.error || 'Failed to save key'}`);
+      }
+    } catch (err: any) {
+      setKeyMessage(`Error: ${err?.message || 'Network error'}`);
+    } finally {
+      setIsSavingKey(false);
+    }
+  };
+
   return (
     <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 text-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between min-h-16 py-2 gap-3 flex-wrap sm:flex-nowrap">
           {/* Brand Logo & System Status */}
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 p-0.5 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <div className="flex items-center space-x-3 flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 p-0.5 flex items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0">
               <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
                 <BrainCircuit className="w-5 h-5 text-cyan-400 animate-pulse" />
               </div>
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-base font-bold text-slate-100">
+                <h1 className="text-base font-bold text-slate-100 whitespace-nowrap">
                   AI Visual Memory System
                 </h1>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-950 text-cyan-300 border border-cyan-800/50">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-950 text-cyan-300 border border-cyan-800/50 whitespace-nowrap">
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-1 animate-pulse" />
                   SPATIAL AI
                 </span>
               </div>
-              <p className="text-xs text-slate-400 hidden sm:block">
+              <p className="text-xs text-slate-400 hidden lg:block whitespace-nowrap">
                 3D Spatial Perception & Persistent Object Tracking
               </p>
             </div>
@@ -129,6 +186,22 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Action Buttons & Status Telemetry */}
           <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* API Key Status / Configuration Button */}
+            <button
+              onClick={() => setShowKeyModal(true)}
+              className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                hasApiKey
+                  ? 'bg-emerald-950/70 text-emerald-300 border-emerald-800/80 hover:bg-emerald-900/80'
+                  : 'bg-amber-950/80 text-amber-300 border-amber-700/80 hover:bg-amber-900/80 animate-pulse'
+              }`}
+              title="Configure Gemini API Key"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline font-mono text-[11px]">
+                {hasApiKey ? 'Gemini AI' : 'API Key'}
+              </span>
+            </button>
+
             {stats && (
               <div className="hidden lg:flex items-center space-x-3 text-xs bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 font-mono">
                 <div className="flex items-center space-x-1 text-emerald-400">
@@ -208,6 +281,75 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Gemini API Key Configuration Modal */}
+      {showKeyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-cyan-400" />
+                Configure Google Gemini API Key
+              </h3>
+              <button
+                onClick={() => setShowKeyModal(false)}
+                className="text-slate-400 hover:text-white text-sm"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-400 leading-relaxed">
+              To perform accurate real-time object detection on live webcam and video frames, enter your Google Gemini API key. Your key is stored in your local environment.
+            </p>
+
+            <form onSubmit={handleSaveKey} className="space-y-3">
+              <div>
+                <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                  GEMINI_API_KEY
+                </label>
+                <input
+                  type="password"
+                  placeholder="Paste your Gemini API key (AIzaSy...)"
+                  value={keyInput}
+                  onChange={(e) => setKeyInput(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              {keyMessage && (
+                <div className={`p-2.5 rounded-xl text-xs flex items-center space-x-2 ${
+                  keyMessage.startsWith('Error')
+                    ? 'bg-rose-950/80 text-rose-300 border border-rose-800'
+                    : 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
+                }`}>
+                  {keyMessage.startsWith('Error') ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                  <span>{keyMessage}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2">
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-cyan-400 hover:underline"
+                >
+                  Get a free key at Google AI Studio ↗
+                </a>
+
+                <button
+                  type="submit"
+                  disabled={isSavingKey || !keyInput.trim()}
+                  className="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition-colors flex items-center space-x-1.5"
+                >
+                  {isSavingKey ? 'Saving...' : 'Save & Activate'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

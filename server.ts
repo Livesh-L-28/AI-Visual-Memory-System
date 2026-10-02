@@ -1,27 +1,70 @@
+import 'dotenv/config';
 import express from 'express';
 import http from 'http';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { WebSocketServer, WebSocket } from 'ws';
-import { createServer as createViteServer } from 'vite';
 import { globalMemoryStore } from './src/services/memory_store';
-import { analyzeFrameWithGemini, chatWithVisualMemory } from './src/services/gemini_service';
+import { analyzeFrameWithGemini, chatWithVisualMemory, resetGeminiClient } from './src/services/gemini_service';
+import { cropBoundingBox } from './src/lib/image_cropper';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const rootDir = process.cwd();
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = parseInt(process.env.PORT || '3000', 10);
 
   app.use(express.json({ limit: '20mb' }));
 
   // ==================== REST API ROUTES ====================
 
+  // GET /api/config -> check system configuration status
+  app.get('/api/config', (req, res) => {
+    res.json({
+      hasGeminiKey: !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'DUMMY_KEY'
+    });
+  });
+
+  // POST /api/config/api-key -> set Gemini API key dynamically
+  app.post('/api/config/api-key', (req, res) => {
+    try {
+      const { apiKey } = req.body;
+      if (!apiKey || typeof apiKey !== 'string') {
+        return res.status(400).json({ error: 'Valid apiKey string is required' });
+      }
+      process.env.GEMINI_API_KEY = apiKey.trim();
+      resetGeminiClient();
+
+      // Persist to .env file
+      try {
+        const envPath = path.resolve(process.cwd(), '.env');
+        let envContent = '';
+        if (fs.existsSync(envPath)) {
+          envContent = fs.readFileSync(envPath, 'utf-8');
+        }
+        if (envContent.includes('GEMINI_API_KEY=')) {
+          envContent = envContent.replace(/GEMINI_API_KEY=.*/g, `GEMINI_API_KEY="${apiKey.trim()}"`);
+        } else {
+          envContent += `\nGEMINI_API_KEY="${apiKey.trim()}"\n`;
+        }
+        fs.writeFileSync(envPath, envContent.trim() + '\n', 'utf-8');
+      } catch (e) {
+        // Ignore filesystem write error in restricted environment
+      }
+
+      res.json({ success: true, message: 'Gemini API key configured successfully' });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // GET /api/objects -> list all permanent re-identified objects
   app.get('/api/objects', (req, res) => {
     try {
-      const objects = globalMemoryStore.getAllObjects();
+      const objects = globalMemoryStore.getAllObjects().map((o) => {
+        const { embeddingVector, ...rest } = o;
+        return rest;
+      });
       res.json(objects);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -36,7 +79,8 @@ async function startServer() {
       if (!object) {
         return res.status(404).json({ error: `Object #${id} not found in memory` });
       }
-      res.json(object);
+      const { embeddingVector, ...rest } = object;
+      res.json(rest);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -60,7 +104,10 @@ async function startServer() {
       if (!query.trim()) {
         return res.json([]);
       }
-      const results = globalMemoryStore.searchMemory(query);
+      const results = globalMemoryStore.searchMemory(query).map((r) => {
+        const { embeddingVector, ...restObj } = r.object;
+        return { ...r, object: restObj as any };
+      });
       res.json(results);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -123,6 +170,20 @@ async function startServer() {
 
       if (!detectionsToProcess) {
         detectionsToProcess = [];
+      }
+
+      // Crop real, live object thumbnails from the captured frame
+      if (frameBase64 && detectionsToProcess.length > 0) {
+        await Promise.all(
+          detectionsToProcess.map(async (det: any) => {
+            if (!det.croppedThumbnail && det.bbox) {
+              const crop = await cropBoundingBox(frameBase64, det.bbox);
+              if (crop) {
+                det.croppedThumbnail = crop;
+              }
+            }
+          })
+        );
       }
 
       const processed = globalMemoryStore.processFrameDetections(detectionsToProcess, roomId || 1);
@@ -209,10 +270,61 @@ async function startServer() {
     }
   });
 
+  // GET /api/zones -> list room zones
+  app.get('/api/zones', (req, res) => {
+    try {
+      const roomId = parseInt((req.query.roomId as string) || '1', 10);
+      const rooms = globalMemoryStore.getRooms();
+      const room = rooms.find((r) => r.id === roomId) || rooms[0];
+      res.json(room.zones || []);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/objects/:id/trajectory -> movement path history
+  app.get('/api/objects/:id/trajectory', (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const obj = globalMemoryStore.getObjectById(id);
+      if (!obj) {
+        return res.status(404).json({ error: 'Object not found' });
+      }
+      res.json(obj.trajectory || []);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ==================== HTTP & WEBSOCKET SERVER ====================
   const server = http.createServer(app);
 
   const wss = new WebSocketServer({ noServer: true });
+
+  const broadcastToAll = (payload: any) => {
+    const dataStr = JSON.stringify(payload);
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(dataStr);
+      }
+    });
+  };
+
+  // Wire up VisualMemoryStore event listeners to WebSockets
+  globalMemoryStore.on('object_status_changed', (evt) => {
+    broadcastToAll({
+      type: 'object_status_changed',
+      ...evt
+    });
+  });
+
+  globalMemoryStore.on('objects_updated', ({ objects, stats }) => {
+    broadcastToAll({
+      type: 'objects_updated',
+      objects,
+      stats
+    });
+  });
 
   server.on('upgrade', (request, socket, head) => {
     const pathname = request.url;
@@ -228,7 +340,18 @@ async function startServer() {
   wss.on('connection', (ws: WebSocket) => {
     console.log('[WebSocket] Client connected to live camera stream');
 
-    // Broadcast frame ticks every 100ms
+    // Send immediate initial sync
+    const initialObjects = globalMemoryStore.getAllObjects();
+    const initialStats = globalMemoryStore.getStats();
+    ws.send(
+      JSON.stringify({
+        type: 'objects_updated',
+        objects: initialObjects,
+        stats: initialStats
+      })
+    );
+
+    // Periodic telemetry tick
     const timer = setInterval(() => {
       if (ws.readyState === WebSocket.OPEN) {
         const stats = globalMemoryStore.getStats();
@@ -245,19 +368,21 @@ async function startServer() {
               className: o.className,
               lastLocationX: o.lastLocationX,
               lastLocationY: o.lastLocationY,
-              recentConfidence: o.recentConfidence
+              recentConfidence: o.recentConfidence,
+              status: o.status,
+              zone: o.zone
             }))
           })
         );
       }
-    }, 200);
+    }, 500);
 
     ws.on('message', async (data: Buffer | string) => {
       try {
         const message = JSON.parse(data.toString());
         if (message.type === 'process_frame_chunk' && message.frameBase64) {
           const visionResult = await analyzeFrameWithGemini(message.frameBase64);
-          const processed = globalMemoryStore.processFrameDetections(visionResult.detections);
+          const processed = globalMemoryStore.processFrameDetections(visionResult.detections, message.roomId || 1);
           ws.send(
             JSON.stringify({
               type: 'frame_processed_result',
@@ -278,13 +403,14 @@ async function startServer() {
 
   // ==================== VITE DEVELOPMENT / PRODUCTION ====================
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa'
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(__dirname, 'dist');
+    const distPath = path.resolve(rootDir, 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
